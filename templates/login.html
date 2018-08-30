@@ -3,35 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <title>Flaskr-TDD | Login</title>
+    <link rel="stylesheet" type="text/css" href="//stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
 </head>
 <body>
     
-    <div class>
+    <div class='container'>
         
         <h1>Flaskr</h1>
-        <div class="metanav">
-            {% if not session.logged_in %}
-                <a href="{{ url_for('login') }}">Log In</a>
-            {% else %}
-                <a href="{{ url_for('logout') }}">Log Out</a>
-            {% endif %}
-        </div>
+        
+        <br><br>
+        
         {% for message in get_flashed_messages() %}
-            <div class="flash">{{ messages }}</div>
+            <div class="flash alert alert-success col-sm-4" role="success">{{ message }}</div>
         {% endfor %}
-        {% block body %}{% endblock %}
 
-        <h2>Login</h2>
+        <h3>Login</h3>
+
         {% if error %}
-            <p class="error"><strong>Error:</strong> {{ error }}</p>
-        {% endif %}
-        <form action="{{ url_for('login') }}" method="post">
+            <p class="alert alert-danger col-sm-4" role="danger"><strong>Error:</strong> {{ error }}{% endif %}</p>
+        <form action="{{ url_for('login') }}" method="post" class="form-group">
             <dl>
                 <dt>Username:</dt>
-                <dd><input type="text" name="username"></dd>
+                <dd><input type="text" name="username" class="form-control col-sm-4"></dd>
                 <dt>Password:</dt>
-                <dd><input type="password" name="password"></dd>
-                <dd><input type="submit" value="Login"></dd>
+                <dd><input type="password" name="password" class="form-control col-sm-4"></dd>
+                <br><br>
+                <dd><input type="submit" class="btn btn-primary" value="Login"></dd>
+                <span>Use "admin" for username and password</span>
             </dl>
         </form>
 

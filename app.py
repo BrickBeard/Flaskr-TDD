@@ -1,6 +1,10 @@
-import sqlite3
+import os
 from flask import Flask, request, session, g, redirect, url_for, \
     abort, render_template, flash, jsonify
+from flask_sqlalchemy import SQLAlchemy
+
+# Get the folder where this file runs
+basedir = os.path.abspath(os.path.dirname(__file__))
     
 # Configuration
 DATABASE = 'flaskr.db'
@@ -9,10 +13,22 @@ SECRET_KEY = 'son_of_a_gun'
 USERNAME = 'admin'
 PASSWORD = 'admin'
 
+
+# Define the full path for the Database
+DATABASE_PATH = os.path.join(basedir, DATABASE)
+
+# Database config
+SQLALCHEMY_DATABASE_URI = 'sqlite:///' + DATABASE_PATH
+SQLALCHEMY_TRACK_MODIFICATIONS = False
+
 # Create and initialize app
 app = Flask(__name__)
 app.config.from_object(__name__)
+db = SQLAlchemy(app)
 
+import models
+
+'''
 # Connect to Database
 def connect_db():
     rv = sqlite3.connect(app.config['DATABASE'])
@@ -38,14 +54,24 @@ def get_db():
 def close_db(error):
     if hasattr(g, 'sqlite_db'):
         g.sqlite_db.close()
-        
+'''
+     
 @app.route('/')
 def index():
     # Searches the database for entries, then displays them
-    db = get_db()
-    cur = db.execute('SELECT * FROM entries ORDER BY id DESC')
-    entries = cur.fetchall()
+    entries = db.session.query(models.Flaskr)
     return render_template('index.html', entries=entries)
+
+@app.route('/add', methods=['POST'])
+def add_entry():
+    '''Add new post to database'''
+    if not session.get('logged_in'):
+        abort(401)
+    new_entry = models.Flaskr(request.form['title'], request.form['text'])
+    db.session.add(new_entry)
+    db.session.commit()
+    flash('New entry was successfully posted')
+    return redirect(url_for('index'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -69,34 +95,19 @@ def logout():
     flash('You were successfully logged out')
     return redirect(url_for('index'))
 
-@app.route('/add', methods=['POST'])
-def add_entry():
-    '''Add new post to database'''
-    if not session.get('logged_in'):
-        abort(401)
-    db = get_db()
-    db.execute(
-        'INSERT INTO entries (title, text) VALUES (?, ?)', 
-        [request.form['title'], request.form['text']]
-    )
-    db.commit()
-    flash('New entry was successfully posted')
-    return redirect(url_for('index'))
-
-@app.route('/delete/<post_id>', methods=['GET'])
+@app.route('/delete/<int:post_id>', methods=['GET'])
 def delete_entry(post_id):
     '''Delete post from database'''
     result = {'status': 0, 'message': 'Error'}
     try:
-        db = get_db()
-        db.execute('DELETE FROM entries WHERE id = ' + post_id)
-        db.commit()
+        new_id = post_id
+        db.session.query(models.Flaskr).filter_by(post_id=new_id).delete()
+        db.session.commit()
         result = {'status': 1, 'message': 'Post Deleted'}
+        flash('The entry was deleted.')
     except Exception as e:
         result = {'status': 0, 'message': repr(e)}
-        
     return jsonify(result)
 
 if __name__ == '__main__':
-    init_db()
     app.run(host='0.0.0.0', port=5050)
